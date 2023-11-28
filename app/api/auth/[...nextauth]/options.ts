@@ -41,17 +41,20 @@ const options = {
         try {
           const foundUser = await User.findOne({ email: credentials?.email });
           if (foundUser && credentials) {
-            console.log("User Exists");
             const match = await bcrypt.compare(
               credentials.password,
               foundUser.password
             );
 
             if (match) {
-              console.log("Good Pass");
               delete foundUser.password;
 
-              foundUser["role"] = "Local User";
+              if (foundUser.email === "jeetjyoti2020@gmail.com") {
+                foundUser["role"] = "Admin";
+              } else {
+                foundUser["role"] = "Local User";
+              }
+
               return foundUser;
             }
           }
@@ -74,7 +77,6 @@ const options = {
   },
   pages: {
     signIn: "/auth/signIn",
-    // signOut: "/auth/signOut",
   },
 };
 

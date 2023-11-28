@@ -25,8 +25,12 @@ export async function POST(req: NextRequest) {
 
     userData.password = hashPassword;
 
-    await User.create(userData);
-    return NextResponse.json({ message: "User Created" }, { status: 201 });
+    const createdUser = await User.create(userData);
+    delete createdUser.password;
+    return NextResponse.json(
+      { message: "User Created", user: createdUser },
+      { status: 201 }
+    );
   } catch (error) {
     console.log(error);
     return NextResponse.json({ message: "Error", error }, { status: 500 });

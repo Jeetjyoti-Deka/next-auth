@@ -1,5 +1,6 @@
 "use client";
 
+import { sendEmailFromServer } from "@/lib/mailer";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -21,6 +22,7 @@ const LoginForm = () => {
     password: "",
   });
   const [errorMessage, setErrorMessage] = useState("");
+  const [isSignUp, SetIsSignUp] = useState(false);
 
   const handleChange = (e: any) => {
     const value = e.target.value;
@@ -35,27 +37,61 @@ const LoginForm = () => {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setErrorMessage("");
-    const res = await signIn("credentials", {
-      email: formData.email,
-      password: formData.password,
-      redirect: false,
-    });
+    if (isSignUp) {
+      const res = await fetch("/api/Users", {
+        method: "POST",
+        body: JSON.stringify({ formData }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (res?.ok === false && res.status === 401) {
-      setErrorMessage("Invalid Credentials");
-    }
-    if (res?.ok === false) {
-      setErrorMessage("Something went wrong. Please try again later");
-    }
+      if (!res.ok) {
+        setErrorMessage("Something went wrong. Please try again later");
+        router.refresh();
+      }
 
-    if (res?.ok && res.status === 200) {
-      router.push(callbackUrl || "/");
+      const data = await res.json();
+
+      if (data.message === "Duplicate email") {
+        setErrorMessage("User already exist. Please Sign In");
+        SetIsSignUp(false);
+      }
+
+      if (data.message === "User Created") {
+        await sendEmailFromServer({
+          email: data.user.email,
+          userId: data.user._id,
+        });
+        setErrorMessage(
+          "An email verification link has been sent to your provided address. Please check to complete the verification process."
+        );
+        SetIsSignUp(false);
+      }
+    } else {
+      const res = await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      });
+
+      if (res?.ok === false && res.status === 401) {
+        setErrorMessage("Invalid Credentials");
+      }
+      if (res?.ok === false) {
+        setErrorMessage("Something went wrong. Please try again later");
+      }
+
+      if (res?.ok && res.status === 200) {
+        router.push(callbackUrl || "/");
+        router.refresh();
+      }
     }
   };
 
   return (
     <div className="flex flex-col gap-3 w-full items-center ">
-      <h1 className="text-center mb-4">Login</h1>
+      <h1 className="text-center mb-4">{isSignUp ? "Register" : "Login"}</h1>
       <button
         className="bg-gray-200 w-1/2 py-2 rounded-md flex items-center justify-center gap-4 text-xl"
         onClick={() => signIn("google", { callbackUrl: callbackUrl || "" })}
@@ -91,10 +127,26 @@ const LoginForm = () => {
         />
         <input
           type="submit"
-          value="Login"
+          value={isSignUp ? "Sign Up" : "Login"}
           className="bg-blue-300 hover:bg-blue-100 py-2 rounded-lg my-2"
         />
       </form>
+      {isSignUp ? (
+        <p>
+          Already a user?{" "}
+          <button className="underline" onClick={() => SetIsSignUp(false)}>
+            Login
+          </button>
+        </p>
+      ) : (
+        <p>
+          Not registered yet?{" "}
+          <button className="underline" onClick={() => SetIsSignUp(true)}>
+            Sign Up
+          </button>
+        </p>
+      )}
+
       <p className="text-red-500 font-semibold text-2xl">{errorMessage}</p>
     </div>
   );
