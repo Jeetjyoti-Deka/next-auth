@@ -77,9 +77,11 @@ const LoginForm = () => {
 
       if (res?.ok === false && res.status === 401) {
         setErrorMessage("Invalid Credentials");
+        return;
       }
       if (res?.ok === false) {
         setErrorMessage("Something went wrong. Please try again later");
+        return;
       }
 
       if (res?.ok && res.status === 200) {
