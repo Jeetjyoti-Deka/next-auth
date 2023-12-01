@@ -14,8 +14,7 @@ const sendEmail = async ({ email, userId }: any) => {
     });
 
     const transporter = nodemailer.createTransport({
-      host: process.env.NODEMAILER_HOST,
-      port: Number(process.env.NODEMAILER_PORT),
+      service: "gmail",
       auth: {
         user: process.env.NODEMAILER_USER,
         pass: process.env.NODEMAILER_PASS,
@@ -23,7 +22,7 @@ const sendEmail = async ({ email, userId }: any) => {
     });
 
     const mailOptions = {
-      from: `${process.env.DOMAIN}`,
+      from: `${process.env.NODEMAILER_USER}`,
       to: email,
       subject: "Verify your Email",
       html: `<p>Click <a href="${process.env.DOMAIN}/VerifyEmail?token=${hashToken}">here</a> to verify your email</p>`,
